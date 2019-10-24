@@ -1,9 +1,9 @@
 !=================================================================================================================================
-! Copyright (c) 2010-2016  Prof. Claus-Dieter Munz 
+! Copyright (c) 2010-2016  Prof. Claus-Dieter Munz
 ! This file is part of FLEXI, a high-order accurate framework for numerically solving PDEs with discontinuous Galerkin methods.
 ! For more information see https://www.flexi-project.org and https://nrg.iag.uni-stuttgart.de/
 !
-! FLEXI is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
+! FLEXI is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
 ! as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 !
 ! FLEXI is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
@@ -150,7 +150,7 @@ REAL, INTENT(OUT)              :: Fv(3)                                  !< (OUT
 !----------------------------------------------------------------------------------------------------------------------------------
 ! LOCAL VARIABLES
 REAL                           :: tau(3,3)                  ! Viscous stress tensor
-REAL                           :: muS
+REAL                           :: muS(PP_nCoef)
 REAL                           :: GradV(3,3),DivV,prim(PP_nVarPrim)
 INTEGER                        :: i, j
 !==================================================================================================================================
@@ -166,18 +166,18 @@ DO j=0,PP_NZ; DO i=0,PP_N
   GradV(:,2)=gradUy_Face(2:4,i,j)
 #if PP_dim==3
   GradV(:,3)=gradUz_Face(2:4,i,j)
-#else 
+#else
   GradV(:,3)=0.
 #endif
 
   ! Velocity divergence
   DivV=GradV(1,1)+GradV(2,2)+GradV(3,3)
   ! Calculate shear stress tensor
-  tau=muS*(GradV + TRANSPOSE(GradV))
-  tau(1,1)=tau(1,1)-2./3.*muS*DivV
-  tau(2,2)=tau(2,2)-2./3.*muS*DivV
+  tau=muS(1)*(GradV + TRANSPOSE(GradV))
+  tau(1,1)=tau(1,1)-2./3.*muS(1)*DivV
+  tau(2,2)=tau(2,2)-2./3.*muS(1)*DivV
 #if PP_dim==3
-  tau(3,3)=tau(3,3)-2./3.*muS*DivV
+  tau(3,3)=tau(3,3)-2./3.*muS(1)*DivV
 #endif
   ! Calculate viscous force vector
   Fv=Fv+MATMUL(tau,NormVec(:,i,j))*wGPSurf(i,j)*SurfElem(i,j)

@@ -102,7 +102,7 @@ IF (.NOT.DGonly) THEN
 #endif
 
   CALL OpenDataFile(statefile,create=.FALSE.,single=.FALSE.,readOnly=.TRUE.,communicator=MPI_COMM_WORLD)
-  CALL GetArrayAndName('ElemData','VarNamesAdd',nVal,tmp,VarNamesElemData_loc)
+  CALL GetArrayAndName('ElemData','VarNames_ElemData',nVal,tmp,VarNamesElemData_loc)
   CALL CloseDataFile()
   IF (ALLOCATED(VarNamesElemData_loc)) THEN
     ALLOCATE(ElemData_loc(nVal(1),nVal(2),nVal(3)))

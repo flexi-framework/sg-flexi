@@ -366,9 +366,6 @@ END FUNCTION AForLege
 SUBROUTINE GetMultiIndFrom1DInd(MaxInd1D,EndInd,isFullOrder,MultiIndArr)
 ! MODULES
 USE MOD_PreProc
-USE MOD_SG_Vars        ,ONLY: Distribution,wQP_nDim
-USE MOD_SG_Vars        ,ONLY: FullOrderToTensorVec
-USE MOD_Basis          ,ONLY: LegendrePolynomialAndDerivative
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT/OUTPUT VARIABLES

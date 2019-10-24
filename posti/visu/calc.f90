@@ -76,8 +76,7 @@ REAL                :: Psi(0:PP_nCoefM1)
 INTEGER             :: iQPInterval,iSGElem,iSGElem_nD(PP_nDimStoch),iDimStoch
 !===================================================================================================================================
 ! calc DG solution
-SWRITE(*,*) "Calc quantities"
-SWRITE(*,*) "Prepare..."
+SWRITE(*,*) "[DG] calc quantities"
 
 ! some init stuff
 !--------------------------------
@@ -117,14 +116,12 @@ END IF
 
 ! call actual computation routine
 !--------------------------------
-SWRITE(*,*) "Transform DG..."
 SDEALLOCATE(UVisu_DG)
 ALLOCATE(UVisu_DG(0:NVisu,0:NVisu,0:ZDIM(NVisu),nElems_DG,1:nVarVisu))
 CALL Transform(.FALSE.)
 
 #if FV_ENABLED
 IF(nElems_FV.GT.0) THEN 
-  SWRITE(*,*) "Transform FV..."
   SDEALLOCATE(UVisu_FV)
   ALLOCATE(UVisu_FV(0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV,1:nVarVisu))
   CALL Transform(.TRUE.)

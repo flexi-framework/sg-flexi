@@ -77,7 +77,8 @@ IF(posti) nQP = MERGE(nQPVisu,nQP,nQPVisu.GT.0)
 CALL GetQuadNodesAndWeightsAndVdm(nQP,nQPTotal,&
                                   xiQP, xiQPRef, xiQP_nDim, &
                                   wQP, wQP_nDim, &
-                                  SG_Vdm_OrthQuad, SG_Vdm_QuadOrth )
+                                  SG_Vdm_OrthQuad, SG_Vdm_QuadOrth,&
+                                  SG_Vdm_OrthQuad_1D,SG_Vdm_QuadOrth_1D )
 
 IF(posti) RETURN
 
@@ -108,7 +109,7 @@ END SUBROUTINE InitQuadrature
 SUBROUTINE GetQuadNodesAndWeightsAndVdm(nQPLoc, nQPTotalLoc, &
                                         xiQPLoc, xiQPRefLoc, xiQP_nDimLoc,    &
                                         wQPLoc, wQP_nDimLoc, &
-                                        Vdm_OrthQuadLoc, Vdm_QuadOrthLoc )
+                                        Vdm_OrthQuadLoc, Vdm_QuadOrthLoc,Vdm_OrthQuadLoc_1D,Vdm_QuadOrthLoc_1D )
 ! MODULES
 USE MOD_Globals
 USE MOD_PreProc
@@ -118,19 +119,21 @@ USE MOD_SG_Tensor   ,ONLY: GetMultiIndFrom1DInd
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT/OUTPUT VARIABLES
-INTEGER,INTENT(INOUT)          :: nQPLoc
-INTEGER,INTENT(INOUT)          :: nQPTotalLoc
-REAL,ALLOCATABLE,INTENT(INOUT) :: xiQPLoc(:,:)
-REAL,ALLOCATABLE,INTENT(INOUT) :: xiQPRefLoc(:)
-REAL,ALLOCATABLE,INTENT(INOUT) :: xiQP_nDimLoc(:,:)
-REAL,ALLOCATABLE,INTENT(INOUT) :: wQPLoc(:)
-REAL,ALLOCATABLE,INTENT(INOUT) :: wQP_nDimLoc(:)
-REAL,ALLOCATABLE,INTENT(INOUT) :: Vdm_OrthQuadLoc(:,:)
-REAL,ALLOCATABLE,INTENT(INOUT) :: Vdm_QuadOrthLoc(:,:)
+INTEGER,INTENT(INOUT)                   :: nQPLoc
+INTEGER,INTENT(INOUT)                   :: nQPTotalLoc
+REAL,ALLOCATABLE,INTENT(INOUT)          :: xiQPLoc(:,:)
+REAL,ALLOCATABLE,INTENT(INOUT)          :: xiQPRefLoc(:)
+REAL,ALLOCATABLE,INTENT(INOUT)          :: xiQP_nDimLoc(:,:)
+REAL,ALLOCATABLE,INTENT(INOUT)          :: wQPLoc(:)
+REAL,ALLOCATABLE,INTENT(INOUT)          :: wQP_nDimLoc(:)
+REAL,ALLOCATABLE,INTENT(INOUT)          :: Vdm_OrthQuadLoc(:,:)
+REAL,ALLOCATABLE,INTENT(INOUT)          :: Vdm_QuadOrthLoc(:,:)
+REAL,ALLOCATABLE,INTENT(INOUT),OPTIONAL :: Vdm_OrthQuadLoc_1D(:,:)
+REAL,ALLOCATABLE,INTENT(INOUT),OPTIONAL :: Vdm_QuadOrthLoc_1D(:,:)
 !----------------------------------------------------------------------------------------------------------------------------------
 ! LOCAL VARIABLES
-INTEGER              :: iQP,iCoef,iDimStoch,PolyDeg
 REAL,ALLOCATABLE     :: Vdm_OrthQuad_1D(:,:)
+INTEGER              :: iQP,iCoef,iDimStoch,PolyDeg
 INTEGER,ALLOCATABLE  :: iQPVec(:,:)
 !==================================================================================================================================
 nQPTotalLoc = nQPLoc**PP_nDimStoch
@@ -181,7 +184,6 @@ DO iCoef=0,PP_M
     Vdm_OrthQuad_1D(iQP,iCoef)=PsiOfXi(iCoef,xiQPRefLoc(iQP),Distribution)
   END DO
 END DO
-
 !Get Vdm at quatrature point as product of orth polynomials in each dimension
 Vdm_OrthQuadLoc=1.
 DO iCoef=0,PP_nCoefM1
@@ -197,6 +199,19 @@ DO iQP=1,nQPTotalLoc
   ! Calculate "inverse" Vandermonde matrix
   Vdm_QuadOrthLoc(:,iQP) = Vdm_OrthQuadLoc(iQP,:)*wQP_nDimLoc(iQP)
 END DO
+
+IF(PRESENT(Vdm_OrthQuadLoc_1D)) THEN
+  ALLOCATE(Vdm_OrthQuadLoc_1D(1:nQPLoc,0:PP_M))
+  Vdm_OrthQuadLoc_1D = Vdm_OrthQuad_1D
+END IF
+IF(PRESENT(Vdm_QuadOrthLoc_1D)) THEN
+  ALLOCATE(Vdm_QuadOrthLoc_1D(0:PP_M,1:nQPLoc))
+  !Get Vdm 1D
+  DO iQP=1,nQPLoc
+  ! Calculate "inverse" Vandermonde matrix
+    Vdm_QuadOrthLoc_1D(:,iQP)=Vdm_OrthQuad_1D(iQP,:)*wQPLoc(iQP)
+  END DO
+END IF
 END SUBROUTINE GetQuadNodesAndWeightsAndVdm
 
 

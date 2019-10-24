@@ -300,11 +300,11 @@ BCState = Boundarytype(BC(SideID),BC_STATE)
 SELECT CASE(BCType)
 CASE(2) !Exact function or refstate
   IF(BCState.EQ.0)THEN
-    xiAtQuad(:) = xiDet(:)
-    DO iDimStoch=1,PP_nDimStoch
-      xiAtQuad(nDimStochPositions(iDimStoch)) = xiQP_nDim(iDimStoch,iQP)
-    END DO
     DO q=0,ZDIM(Nloc); DO p=0,Nloc
+      xiAtQuad(:) = xiDet(:)
+      DO iDimStoch=1,PP_nDimStoch
+        xiAtQuad(nDimStochPositions(iDimStoch)) = xiQP_nDim(iDimStoch,iQP)
+      END DO
       CALL ExactFunc(IniExactFunc,t,Face_xGP(:,p,q),Cons,xi=xiAtQuad)
       CALL ConsToPrimDet(UPrim_boundary(:,p,q),Cons)
     END DO; END DO

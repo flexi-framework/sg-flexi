@@ -147,10 +147,12 @@
 #define SGV_REFSTATEVEL_XY 5
 #define SGV_DELTA_99       6
 #define SGV_DMR_ANGLE      7
-#define SGV_MACH           8
-
+#if PARABOLIC
+#define SGV_VISCOSITY      8
 #define SGV_ARRAY_LEN  8 /*must be equal to maximal number of defined stoch dimensions*/
-
+#else
+#define SGV_ARRAY_LEN  7 /*must be equal to maximal number of defined stoch dimensions*/
+#endif
 
 !2d functionality
 #if (PP_dim==2)

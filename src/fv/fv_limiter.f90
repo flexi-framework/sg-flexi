@@ -38,7 +38,7 @@ END INTERFACE
 
 ABSTRACT INTERFACE
   PURE SUBROUTINE LimiterInt(sL, sR, s)
-  USE MOD_Preproc
+  USE MOD_PreProc ,ONLY: PP_nVarPrim
   REAL,INTENT(IN)  :: sL(PP_nVarPrim),sR(PP_nVarPrim)
   REAL,INTENT(OUT) :: s(PP_nVarPrim)
   END SUBROUTINE
@@ -91,7 +91,6 @@ END SUBROUTINE DefineParametersFV_Limiter
 
 SUBROUTINE InitFV_Limiter()
 USE MOD_Globals
-USE MOD_Preproc
 USE MOD_ReadInTools
 USE MOD_FV_Vars     ,ONLY: FV_sweby_beta
 IMPLICIT NONE
@@ -126,7 +125,7 @@ END SUBROUTINE InitFV_Limiter
 !==================================================================================================================================
 PURE SUBROUTINE NullLimiter(sL, sR, s)
 ! MODULES
-USE MOD_Preproc
+USE MOD_PreProc ,ONLY: PP_nVarPrim
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT / OUTPUT VARIABLES
@@ -148,7 +147,7 @@ END SUBROUTINE NullLimiter
 !==================================================================================================================================
 PURE SUBROUTINE MinMod(sL, sR, s)
 ! MODULES
-USE MOD_Preproc
+USE MOD_PreProc ,ONLY: PP_nVarPrim
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT / OUTPUT VARIABLES
@@ -171,8 +170,8 @@ END SUBROUTINE MinMod
 !==================================================================================================================================
 PURE SUBROUTINE Sweby(sL, sR, s)
 ! MODULES
+USE MOD_PreProc ,ONLY: PP_nVarPrim
 USE MOD_FV_Vars ,ONLY: FV_sweby_beta
-USE MOD_Preproc
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT / OUTPUT VARIABLES
@@ -193,7 +192,7 @@ END SUBROUTINE Sweby
 !==================================================================================================================================
 PURE SUBROUTINE CentralLimiter(sL, sR, s)
 ! MODULES
-USE MOD_Preproc
+USE MOD_PreProc ,ONLY: PP_nVarPrim
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT / OUTPUT VARIABLES

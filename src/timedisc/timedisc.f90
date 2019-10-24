@@ -456,8 +456,8 @@ tStage=t
 CALL DGTimeDerivative_weakForm(tStage)
 CALL VCopy(nTotalU,Ut_temp,Ut)               !Ut_temp = Ut
 CALL VAXPBY(nTotalU,U,Ut,ConstIn=b_dt(1))    !U       = U + Ut*b_dt(1)
-#if FV_ENABLED
 IF(doCalcIndicator) CALL CalcIndicator(U,t)
+#if FV_ENABLED
 CALL FV_Switch(U,Ut_temp,AllowToDG=FV_toDGinRK)
 #endif
 #if SG_HP_LIMITER
@@ -466,16 +466,16 @@ CALL HyperbolicityPreservingLimiter()
 DO iStage=2,nRKStages
   CurrentStage=iStage
   tStage=t+dt*RKc(iStage)
-  CALL DGTimeDerivative_weakForm(tStage)
-  CALL VAXPBY(nTotalU,Ut_temp,Ut,ConstOut=-RKA(iStage)) !Ut_temp = Ut - Ut_temp*RKA(iStage)
-  CALL VAXPBY(nTotalU,U,Ut_temp,ConstIn =b_dt(iStage))  !U       = U + Ut_temp*b_dt(iStage)
-#if FV_ENABLED
   IF(doCalcIndicator) CALL CalcIndicator(U,t)
+#if FV_ENABLED
   CALL FV_Switch(U,Ut_temp,AllowToDG=FV_toDGinRK)
 #endif
 #if SG_HP_LIMITER
   CALL HyperbolicityPreservingLimiter()
 #endif
+  CALL DGTimeDerivative_weakForm(tStage)
+  CALL VAXPBY(nTotalU,Ut_temp,Ut,ConstOut=-RKA(iStage)) !Ut_temp = Ut - Ut_temp*RKA(iStage)
+  CALL VAXPBY(nTotalU,U,Ut_temp,ConstIn =b_dt(iStage))  !U       = U + Ut_temp*b_dt(iStage)
 END DO
 CurrentStage=1
 END SUBROUTINE TimeStepByLSERKW2
@@ -494,13 +494,13 @@ USE MOD_DG                ,ONLY: DGTimeDerivative_weakForm
 USE MOD_DG_Vars           ,ONLY: U,Ut,nTotalU
 USE MOD_TimeDisc_Vars     ,ONLY: dt,RKb,RKc,nRKStages,CurrentStage
 USE MOD_Mesh_Vars         ,ONLY: nElems
-#if FV_ENABLED
 USE MOD_Indicator         ,ONLY: doCalcIndicator,CalcIndicator
+#if FV_ENABLED
 USE MOD_FV                ,ONLY: FV_Switch
 USE MOD_FV_Vars           ,ONLY: FV_toDGinRK
 #endif
 #if SG_HP_LIMITER
-USE MOD_HPLimiter         ,ONLY: HyperbolicityPreservingLimiter, checkAdmissible
+USE MOD_HPLimiter         ,ONLY: HyperbolicityPreservingLimiter
 #endif
 IMPLICIT NONE
 !-----------------------------------------------------------------------------------------------------------------------------------
@@ -522,8 +522,8 @@ DO iStage=1,5
   tStage=t+dt*RKc(iStage)
   CALL DGTimeDerivative_weakForm(tStage)
   CALL VAXPBY(nTotalU,U,Ut,ConstIn =b_dt(iStage))  !U       = U + Ut*b_dt(iStage)
-#if FV_ENABLED
   IF(doCalcIndicator) CALL CalcIndicator(U,t)
+#if FV_ENABLED
   CALL FV_Switch(U,U_temp,AllowToDG=FV_toDGinRK)
 #endif
 #if SG_HP_LIMITER
@@ -550,8 +550,8 @@ DO iStage=6,10
   ELSE
     CALL VAXPBY(nTotalU,U,Ut,ConstIn =b_dt(iStage))  !U       = U + Ut*b_dt(iStage)
   END IF
+	IF(doCalcIndicator) CALL CalcIndicator(U,t)
 #if FV_ENABLED
-  IF(doCalcIndicator) CALL CalcIndicator(U,t)
   CALL FV_Switch(U,AllowToDG=FV_toDGinRK)
 #endif
 #if SG_HP_LIMITER

@@ -83,7 +83,6 @@ CALL addStrListEntry('IniExactFunc','cavity'   ,9)
 CALL addStrListEntry('IniExactFunc','shock'    ,10)
 CALL addStrListEntry('IniExactFunc','sod'      ,11)
 CALL addStrListEntry('IniExactFunc','dmr'      ,13)
-CALL addStrListEntry('IniExactFunc','riemann'  ,14)
 #if PARABOLIC
 CALL addStrListEntry('IniExactFunc','blasius'  ,1338)
 #endif
@@ -151,13 +150,8 @@ CASE(10) ! shock
   MachShock    = GETREAL('MachShock','1.5')
   PreShockDens = GETREAL('PreShockDens','1.0')
 CASE(13) !dmr
-  xiDet(SGV_WAVESPEED) = 20.
+  xiDet(SGV_WAVESPEED) = 10.
   xiDet(SGV_DMR_ANGLE) = 30.
-CASE(14) !riemann
-  xiDet(SGV_AMPLITUDE)   = 0.
-  xiDet(SGV_STARTPOS_XY) = 0.
-CASE(15) !ffs
-  xiDet(SGV_AMPLITUDE)   = 0.
 #if PARABOLIC
 CASE(1338) ! Blasius boundary layer solution
   delta99_in      = GETREAL('delta99_in')
@@ -202,6 +196,7 @@ USE MOD_Equation_Vars  ,ONLY: IniRefState,RefStateCons,RefStatePrim
 USE MOD_Timedisc_Vars  ,ONLY: fullBoundaryOrder,CurrentStage,dt,RKb,RKc,t
 USE MOD_TestCase       ,ONLY: ExactFuncTestcase
 USE MOD_EOS            ,ONLY: PrimToCons,ConsToPrim,PrimToConsDet,ConsToPrimDet
+USE MOD_SG_Vars        ,ONLY: DimStochIsSet
 #if PARABOLIC
 USE MOD_Eos_Vars       ,ONLY: mu0
 USE MOD_Exactfunc_Vars ,ONLY: delta99_in,x_in
@@ -231,9 +226,6 @@ REAL                            :: random
 REAL                            :: du, dTemp, RT, r2       ! aux var for SHU VORTEX,isentropic vortex case 12
 REAL                            :: pi_loc,phi,radius       ! needed for cylinder potential flow
 REAL                            :: h,sRT,pexit,pentry   ! needed for Couette-Poiseuille
-REAL                            :: shockSpeed12,shockSpeed13,shockSpeed34,shockSpeed42
-REAL                            :: interfacepos, uncertainDensity
-
 #if PARABOLIC
 ! needed for blasius BL
 INTEGER                         :: nSteps,i
@@ -260,13 +252,14 @@ CASE(0)
 CASE(1) ! constant
   Resu = RefStateCons(:,RefState)
 CASE(100) ! constant
-  Resu = RefStateCons(:,RefState)
-  Resu(1) = xi(SGV_WAVESPEED)
-!CASE(101) ! constant SG => stochastic ininitial conditions start from 100
-!  Resu = RefStateCons(:,RefState)
-CASE(101) ! constant
-  Resu = RefStateCons(:,RefState)
-  Resu(3) = Resu(3) * MIN(1.,tEval/200.)
+  prim = RefStatePrim(:,RefState)
+  IF(DimStochIsSet(SGV_REFSTATEVEL_XY)) prim(2) = xi(SGV_REFSTATEVEL_XY)
+  CALL PrimToConsDet(prim,Resu)
+CASE(101) ! naca angle
+  prim = RefStatePrim(:,RefState)
+  prim(2)=prim(2)*COS(xi(SGV_REFSTATEVEL_XY)*PP_Pi/180. )
+  prim(3)=prim(3)*SIN(xi(SGV_REFSTATEVEL_XY)*PP_Pi/180. )
+  CALL PrimToConsDet(prim,Resu)
 CASE(2) ! sinus
   Frequency=0.5
   Amplitude=0.3
@@ -365,7 +358,7 @@ CASE(4) ! oblique sine wave (in x,y,z for 3D calculations, and x,y for 2D)
   END IF
 
 CASE(41) ! SINUS in x
-  Frequency=2.
+  Frequency=1.
   Amplitude=xi(SGV_AMPLITUDE)
   !Amplitude=0.1
   Omega=PP_Pi*Frequency
@@ -610,61 +603,19 @@ CASE(13) ! DoubleMachReflection (see e.g. http://www.astro.princeton.edu/~jstone
   END IF
   prim(6)=0.
   CALL PrimToConsDet(prim,resu)
-CASE(14) ! Riemann Problem from http://www.csun.edu/~jb715473/examples/euler2d.htm#press
-! Rankine-Hugoniot
-uncertainDensity= 0.5323 + 0.1*xi(SGV_AMPLITUDE)
-shockSpeed12 = (uncertainDensity*0.-0.138*1.206)/(uncertainDensity-0.138)
-shockSpeed13 = (0.138*1.206-uncertainDensity*0.)/(0.138-uncertainDensity)
-shockSpeed34 = (1.5*0.- 1.206*uncertainDensity )/(1.5-uncertainDensity)
-shockSpeed42 = (uncertainDensity*1.206-1.5*0)/(uncertainDensity-1.5)
-interfacepos = 0. + 0.1*xi(SGV_STARTPOS_XY)
-  !quadrant 4
-  IF ((x(1).GT.(interfacepos+shockSpeed34*t)).AND.(x(2).GT.(interfacepos+shockSpeed42*t))) THEN
-    prim(1) = 1.5
-    prim(2) = 0.
-    prim(3) = 0.
-    prim(4) = 0.
-    prim(5) = 1.5
-  !quadrant 3
-  ELSE IF ((x(1).LE.(interfacepos+shockSpeed34*t)).AND.(x(2).GT.(interfacepos+shockSpeed13*t))) THEN
-    prim(1) = uncertainDensity
-    prim(2) = 1.206
-    prim(3) = 0.
-    prim(4) = 0.
-    prim(5) = 0.3
-  !quadrant 2
-  ELSE IF ((x(1).GT.(interfacepos+shockSpeed12*t)).AND.(x(2).LE.(interfacepos+shockSpeed42*t))) THEN
-    prim(1) = uncertainDensity
-    prim(2) = 0.
-    prim(3) = 1.206
-    prim(4) = 0.
-    prim(5) = 0.3
-  !quadrant 1
-  ELSE IF ((x(1).LE.(interfacepos+shockSpeed12*t)).AND.(x(2).LE.(interfacepos+shockSpeed13*t))) THEN
-    prim(1) = 0.138
-    prim(2) = 1.206
-    prim(3) = 1.206
-    prim(4) = 0.
-    prim(5) = 0.029
-  END IF
-  prim(6)=0.
-  CALL PrimToConsDet(prim,resu)
-CASE(15)
-  prim = RefStatePrim(:,RefState)
-  IF(tEval.EQ.0.) prim(5) = prim(5) +xi(SGV_AMPLITUDE) 
-  CALL PrimToConsDet(prim,resu)
 #if PARABOLIC
 CASE(1338) ! blasius
+  ! TODO: mu0 auf Quadpoint
   prim=RefStatePrim(:,RefState)
   ! calculate equivalent x for Blasius flat plate to have delta99_in at x_in
   delta99_in=xi(SGV_DELTA_99)
-  x_offset(1)=(delta99_in/5)**2*prim(1)*prim(2)/mu0-x_in(1)
+  x_offset(1)=(delta99_in/5)**2*prim(1)*prim(2)/mu0(1)-x_in(1)
   x_offset(2)=-x_in(2)
   x_offset(3)=0.
   x_eff=x+x_offset
   IF(x_eff(2).GT.0 .AND. x_eff(1).GT.0) THEN
     ! scale bl position in physical space to reference space, eta=5 is ~99% bl thickness
-    eta=x_eff(2)*(prim(1)*prim(2)/(mu0*x_eff(1)))**0.5
+    eta=x_eff(2)*(prim(1)*prim(2)/(mu0(1)*x_eff(1)))**0.5
 
     deta=0.02 ! step size
     nSteps=CEILING(eta/deta)
@@ -688,7 +639,7 @@ CASE(1338) ! blasius
       fpp     = fpp + deta2 * (fppp + fpppbar)
       fppp    = -0.5*f*fpp
     END DO
-    prim(3)=0.5*(mu0*prim(2)/prim(1)/x_eff(1))**0.5*(fp*eta-f)
+    prim(3)=0.5*(mu0(1)*prim(2)/prim(1)/x_eff(1))**0.5*(fp*eta-f)
     prim(2)=RefStatePrim(2,RefState)*fp
   ELSE
     IF(x_eff(2).LE.0) THEN
@@ -787,7 +738,7 @@ CASE(4) ! exact function
     tmp(5,iQP)=Amplitude*(2.*Omega*Kappa-a)
 #endif
 #if PARABOLIC
-    tmp(6,iQP)=REAL(PP_dim)*mu0*Kappa*Omega*Omega/Pr
+    tmp(6,iQP)=REAL(PP_dim)*mu0(1)*Kappa*Omega*Omega/Pr
 #else
     tmp(6,iQP)=0.
 #endif
@@ -828,7 +779,7 @@ CASE(4) ! exact function
 #endif
   END DO ! iElem
 CASE(41) ! Sinus in x
-  Frequency=2.
+  Frequency=1.
   Amplitude=0.1
   Omega=PP_Pi*Frequency
   C = 2.0
@@ -852,7 +803,7 @@ CASE(41) ! Sinus in x
 
         Ut_src_quad(3:4,iQP) = 0.0
 
-        Ut_src_quad(5,iQP) = mu0*kappa*Amplitude*sin(omega*Elem_xGP(1,i,j,k,iElem)-a*t)*omega**2/Pr+&
+        Ut_src_quad(5,iQP) = mu0(1)*kappa*Amplitude*sin(omega*Elem_xGP(1,i,j,k,iElem)-a*t)*omega**2/Pr+&
                         (-Amplitude**2*a+Amplitude**2*omega*kappa)*sin(2.*omega*Elem_xGP(1,i,j,k,iElem)-2.*a*t)+&
                         1./2.*(-4.*Amplitude*a*C+4.*Amplitude*omega*kappa*C-Amplitude*omega*kappa+&
                              Amplitude*omega)*cos(omega*Elem_xGP(1,i,j,k,iElem)-a*t)
@@ -907,7 +858,7 @@ CASE(42) ! Sinus in y
 
       Ut_src(4,i,j,k) = 0.0
 
-      Ut_src(5,i,j,k) = mu0*kappa*Amplitude*sin(omega*Elem_xGP(2,i,j,k,iElem)-a*t)*omega**2/Pr+&
+      Ut_src(5,i,j,k) = mu0(1)*kappa*Amplitude*sin(omega*Elem_xGP(2,i,j,k,iElem)-a*t)*omega**2/Pr+&
                       (-Amplitude**2*a+Amplitude**2*omega*kappa)*sin(2.*omega*Elem_xGP(2,i,j,k,iElem)-2.*a*t)+&
                       1./2.*(-4.*Amplitude*a*C+4.*Amplitude*omega*kappa*C-Amplitude*omega*kappa+&
                            Amplitude*omega)*cos(omega*Elem_xGP(2,i,j,k,iElem)-a*t)
@@ -960,7 +911,7 @@ CASE(43) ! Sinus in z
                       3./2.*Amplitude*omega-2.*Amplitude*omega*C)*cos(omega*Elem_xGP(3,i,j,k,iElem)-a*t)
 
 
-      Ut_src(5,i,j,k) = mu0*kappa*Amplitude*sin(omega*Elem_xGP(3,i,j,k,iElem)-a*t)*omega**2/Pr+&
+      Ut_src(5,i,j,k) = mu0(1)*kappa*Amplitude*sin(omega*Elem_xGP(3,i,j,k,iElem)-a*t)*omega**2/Pr+&
                       (-Amplitude**2*a+Amplitude**2*omega*kappa)*sin(2.*omega*Elem_xGP(3,i,j,k,iElem)-2.*a*t)+&
                       1./2.*(-4.*Amplitude*a*C+4.*Amplitude*omega*kappa*C-Amplitude*omega*kappa+&
                            Amplitude*omega)*cos(omega*Elem_xGP(3,i,j,k,iElem)-a*t)

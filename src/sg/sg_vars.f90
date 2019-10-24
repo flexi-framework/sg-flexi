@@ -56,8 +56,10 @@ REAL,ALLOCATABLE             :: wQPExact_nDim(:)       !< wQP for pseudo-exact n
 
 REAL,ALLOCATABLE             :: SG_Vdm_OrthQuadExact(:,:) !< Vdm for transform from orthonormal basis to quadrature points
 REAL,ALLOCATABLE             :: SG_Vdm_QuadOrthExact(:,:) !< Vdm for transform from quadrature points to orthonormal basis
+REAL,ALLOCATABLE             :: SG_Vdm_OrthQuad_1D(:,:)      !< 1D Vdm for transform from orthonormal basis to quadrature points
+REAL,ALLOCATABLE             :: SG_Vdm_QuadOrth_1D(:,:)      !< Vdm for transform from quadrature points to orthonormal basis
 
-! other 
+! other
 
 INTEGER                      :: nQPVisu                !< custom nQP read in from visu prm file
 
@@ -91,7 +93,10 @@ REAL,ALLOCATABLE             :: StochSigma(:)          !< normal distribution: v
 REAL,ALLOCATABLE             :: StochMu(:)             !< normal distribution: expectation of random variable
 REAL,ALLOCATABLE             :: UniIntBounds(:,:)      !< uniform distribution: lower and upper bound of stoch. var. interval
 INTEGER,ALLOCATABLE          :: nDimStochPositions(:)  !<
-
+LOGICAL,ALLOCATABLE          :: DimStochIsSet(:)
+#if PARABOLIC
+INTEGER                      :: viscosityDim           ! if random viscosity, gives stochastic dimension, need for Vdm_OrthQuad_1D
+#endif
 ! Limiter
 !----------------------------------------------------------------------------------------------------
 

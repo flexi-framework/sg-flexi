@@ -66,6 +66,7 @@ IMPLICIT NONE
 ! LOCAL VARIABLES
 REAL                    :: Time                              !< Used to measure simulation time
 LOGICAL                 :: userblockFound
+INTEGER                 :: res
 !==================================================================================================================================
 CALL SetStackSizeUnlimited()
 CALL InitMPI()
@@ -242,4 +243,7 @@ CALL FinalizeMPI()
 SWRITE(UNIT_stdOut,'(132("="))')
 SWRITE(UNIT_stdOut,'(A,F8.2,A)') ' FLEXI FINISHED! [',Time-StartTime,' sec ]'
 SWRITE(UNIT_stdOut,'(132("="))')
+OPEN(unit=99, FILE="walltime.out",STATUS='unknown', ACTION='write')
+write(99,*)  Time-StartTime
+CLOSE(99,STATUS='KEEP', IOSTAT=res)
 END PROGRAM Flexi

@@ -429,8 +429,7 @@ END SUBROUTINE FV_CalcGradients
 !==================================================================================================================================
 PURE SUBROUTINE CopySurfaceToVolume(surface,volume,iElem,dir,l)
 ! MODULES
-USE MOD_Globals
-USE MOD_PreProc
+USE MOD_PreProc        ,ONLY: PP_N, PP_nVarPrim
 USE MOD_Mesh_Vars      ,ONLY: S2V2,nSides,ElemToSide
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT / OUTPUT VARIABLES

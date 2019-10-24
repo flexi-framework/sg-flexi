@@ -1,9 +1,9 @@
 !=================================================================================================================================
-! Copyright (c) 2010-2016  Prof. Claus-Dieter Munz 
+! Copyright (c) 2010-2016  Prof. Claus-Dieter Munz
 ! This file is part of FLEXI, a high-order accurate framework for numerically solving PDEs with discontinuous Galerkin methods.
 ! For more information see https://www.flexi-project.org and https://nrg.iag.uni-stuttgart.de/
 !
-! FLEXI is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
+! FLEXI is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
 ! as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 !
 ! FLEXI is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
@@ -152,10 +152,10 @@ REAL,DIMENSION(PP_nVar    ,0:PP_N,0:PP_N,0:PP_NZ),INTENT(OUT) :: f,g,h          
 INTEGER, INTENT(IN)                                           :: iELem                !< element index in global array
 !----------------------------------------------------------------------------------------------------------------------------------
 ! LOCAL VARIABLES
-REAL                :: muS
+REAL                :: muS(PP_nCoef)
 REAL                :: v1(PP_nCoef),v2(PP_nCoef)
 REAL                :: tau_xx(PP_nCoef),tau_yy(PP_nCoef),tau_xy(PP_nCoef)
-REAL                :: gradT1(PP_nCoef),gradT2(PP_nCoef),lambda,prim(PP_nVarPrim)
+REAL                :: gradT1(PP_nCoef),gradT2(PP_nCoef),lambda(PP_nCoef),prim(PP_nVarPrim)
 INTEGER             :: i,j,k
 #if PP_dim==3
 REAL                :: v3(PP_nCoef)
@@ -189,12 +189,12 @@ DO k=0,PP_NZ;  DO j=0,PP_N; DO i=0,PP_N
   ! gradients of primitive variables are directly available gradU = (/ drho, dv1, dv2, dv3, dT /)
 
   ! viscous fluxes in x-direction
-  tau_xx=muS*( s43*gradUx(SGI2,i,j,k)-s23*gradUy(SGI3,i,j,k)-s23*gradUz(SGI4,i,j,k)) !  4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
-  tau_yy=muS*(-s23*gradUx(SGI2,i,j,k)+s43*gradUy(SGI3,i,j,k)-s23*gradUz(SGI4,i,j,k)) ! -2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
-  tau_zz=muS*(-s23*gradUx(SGI2,i,j,k)-s23*gradUy(SGI3,i,j,k)+s43*gradUz(SGI4,i,j,k)) ! -2/3*mu*u_x-2/3*mu*v_y +4/3*mu*w*z
-  tau_xy=muS*(gradUy(SGI2,i,j,k)+gradUx(SGI3,i,j,k))                                 ! mu*(u_y+v_x)
-  tau_xz=muS*(gradUz(SGI2,i,j,k)+gradUx(SGI4,i,j,k))                                 ! mu*(u_z+w_x)
-  tau_yz=muS*(gradUz(SGI3,i,j,k)+gradUy(SGI4,i,j,k))                                 ! mu*(y_z+w_y)
+  tau_xx=SG_Product(muS,( s43*gradUx(SGI2,i,j,k)-s23*gradUy(SGI3,i,j,k)-s23*gradUz(SGI4,i,j,k))) !  4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
+  tau_yy=SG_Product(muS,(-s23*gradUx(SGI2,i,j,k)+s43*gradUy(SGI3,i,j,k)-s23*gradUz(SGI4,i,j,k))) ! -2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
+  tau_zz=SG_Product(muS,(-s23*gradUx(SGI2,i,j,k)-s23*gradUy(SGI3,i,j,k)+s43*gradUz(SGI4,i,j,k))) ! -2/3*mu*u_x-2/3*mu*v_y +4/3*mu*w*z
+  tau_xy=SG_Product(muS,(gradUy(SGI2,i,j,k)+gradUx(SGI3,i,j,k)))                                 ! mu*(u_y+v_x)
+  tau_xz=SG_Product(muS,(gradUz(SGI2,i,j,k)+gradUx(SGI4,i,j,k)))                                 ! mu*(u_z+w_x)
+  tau_yz=SG_Product(muS,(gradUz(SGI3,i,j,k)+gradUy(SGI4,i,j,k)))                                 ! mu*(y_z+w_y)
 
   gradT1=gradUx(SGI6,i,j,k)
   gradT2=gradUy(SGI6,i,j,k)
@@ -204,29 +204,29 @@ DO k=0,PP_NZ;  DO j=0,PP_N; DO i=0,PP_N
   f(SGI2,i,j,k)=-tau_xx                                       ! F_euler-4/3*mu*u_x+2/3*mu*(v_y+w_z)
   f(SGI3,i,j,k)=-tau_xy                                       ! F_euler-mu*(u_y+v_x)
   f(SGI4,i,j,k)=-tau_xz                                       ! F_euler-mu*(u_z+w_x)
-  f(SGI5,i,j,k)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-SG_Product(tau_xz,v3)-lambda*gradT1  
+  f(SGI5,i,j,k)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-SG_Product(tau_xz,v3)-SG_Product(lambda,gradT1)
                                                               ! F_euler-(tau_xx*u+tau_xy*v+tau_xz*w-q_x) q_x=-lambda*T_x
   ! viscous fluxes in y-direction
   g(SGI1,i,j,k)=0.
   g(SGI2,i,j,k)=-tau_xy                                       ! F_euler-mu*(u_y+v_x)
   g(SGI3,i,j,k)=-tau_yy                                       ! F_euler-4/3*mu*v_y+2/3*mu*(u_x+w_z)
   g(SGI4,i,j,k)=-tau_yz                                       ! F_euler-mu*(y_z+w_y)
-  g(SGI5,i,j,k)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-SG_Product(tau_yz,v3)-lambda*gradT2  
+  g(SGI5,i,j,k)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-SG_Product(tau_yz,v3)-SG_Product(lambda,gradT2)
                                                               ! F_euler-(tau_yx*u+tau_yy*v+tau_yz*w-q_y) q_y=-lambda*T_y
   ! viscous fluxes in z-direction
   h(SGI1,i,j,k)=0.
   h(SGI2,i,j,k)=-tau_xz                                       ! F_euler-mu*(u_z+w_x)
   h(SGI3,i,j,k)=-tau_yz                                       ! F_euler-mu*(y_z+w_y)
   h(SGI4,i,j,k)=-tau_zz                                       ! F_euler-4/3*mu*w_z+2/3*mu*(u_x+v_y)
-  h(SGI5,i,j,k)=-SG_Product(tau_xz,v1)-SG_Product(tau_yz,v2)-SG_Product(tau_zz,v3)-lambda*gradT3  
+  h(SGI5,i,j,k)=-SG_Product(tau_xz,v1)-SG_Product(tau_yz,v2)-SG_Product(tau_zz,v3)-SG_Product(lambda,gradT3)
                                                               ! F_euler-(tau_zx*u+tau_zy*v+tau_zz*w-q_z) q_z=-lambda*T_z
 #else
   ! gradients of primitive variables are directly available gradU = (/ drho, dv1, dv2, dv3, dT /)
 
   ! viscous fluxes in x-direction
-  tau_xx=muS*( s43*gradUx(SGI2,i,j,k)-s23*gradUy(SGI3,i,j,k)) ! 4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
-  tau_yy=muS*(-s23*gradUx(SGI2,i,j,k)+s43*gradUy(SGI3,i,j,k)) !-2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
-  tau_xy=muS*(gradUy(SGI2,i,j,k)+gradUx(SGI3,i,j,k))          !mu*(u_y+v_x)
+  tau_xx=SG_Product(muS,( s43*gradUx(SGI2,i,j,k)-s23*gradUy(SGI3,i,j,k))) ! 4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
+  tau_yy=SG_Product(muS,(-s23*gradUx(SGI2,i,j,k)+s43*gradUy(SGI3,i,j,k))) !-2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
+  tau_xy=SG_Product(muS,(gradUy(SGI2,i,j,k)+gradUx(SGI3,i,j,k))       )   !mu*(u_y+v_x)
 
   gradT1=gradUx(SGI6,i,j,k)
   gradT2=gradUy(SGI6,i,j,k)
@@ -235,14 +235,14 @@ DO k=0,PP_NZ;  DO j=0,PP_N; DO i=0,PP_N
   f(SGI2,i,j,k)=-tau_xx                                       ! F_euler-4/3*mu*u_x+2/3*mu*(v_y+w_z)
   f(SGI3,i,j,k)=-tau_xy                                       ! F_euler-mu*(u_y+v_x)
   f(SGI4,i,j,k)=0.
-  f(SGI5,i,j,k)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-lambda*gradT1  
+  f(SGI5,i,j,k)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-SG_Product(lambda,gradT1)
                                                               ! F_euler-(tau_xx*u+tau_xy*v+tau_xz*w-q_x) q_x=-lambda*T_x
   ! viscous fluxes in y-direction
   g(SGI1,i,j,k)=0.
   g(SGI2,i,j,k)=-tau_xy                                       ! F_euler-mu*(u_y+v_x)
   g(SGI3,i,j,k)=-tau_yy                                       ! F_euler-4/3*mu*v_y+2/3*mu*(u_x+w_z)
   g(SGI4,i,j,k)=0.
-  g(SGI5,i,j,k)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-lambda*gradT2  
+  g(SGI5,i,j,k)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-SG_Product(lambda,gradT2)
                                                               ! F_euler-(tau_yx*u+tau_yy*v+tau_yz*w-q_y) q_y=-lambda*T_y
   ! viscous fluxes in z-direction
   h(:,i,j,k)=0.
@@ -355,20 +355,20 @@ REAL,INTENT(IN)    :: gradUz_Face(PP_nVarPrim,0:Nloc,0:ZDIM(Nloc))!< gradUz_Face
 REAL,INTENT(OUT)   :: f(PP_nVar,0:Nloc,0:ZDIM(Nloc))              !< Cartesian fluxes (iVar,i,j)
 REAL,INTENT(OUT)   :: g(PP_nVar,0:Nloc,0:ZDIM(Nloc))              !< Cartesian fluxes (iVar,i,j)
 REAL,INTENT(OUT)   :: h(PP_nVar,0:Nloc,0:ZDIM(Nloc))              !< Cartesian fluxes (iVar,i,j)
-#ifdef EDDYVISCOSITY 
+#ifdef EDDYVISCOSITY
 REAL,INTENT(IN)    :: muSGS_Face(1,0:Nloc,0:ZDIM(Nloc))
-#endif 
+#endif
 !----------------------------------------------------------------------------------------------------------------------------------
 ! LOCAL VARIABLES
-REAL    :: muS
+REAL    :: muS(PP_nCoef)
 REAL    :: v1(PP_nCoef),v2(PP_nCoef)
 REAL    :: tau_xx(PP_nCoef),tau_yy(PP_nCoef),tau_xy(PP_nCoef)
-REAL    :: gradT1(PP_nCoef),gradT2(PP_nCoef),lambda,prim(PP_nVarPrim)
+REAL    :: gradT1(PP_nCoef),gradT2(PP_nCoef),lambda(PP_nCoef),prim(PP_nVarPrim)
 #if PP_dim==3
 REAL    :: tau_zz(PP_nCoef),tau_xz(PP_nCoef),tau_yz(PP_nCoef)
 REAL    :: v3(PP_nCoef)
 REAL    :: gradT3(PP_nCoef)
-#endif 
+#endif
 INTEGER :: i,j
 !==================================================================================================================================
 DO j=0,ZDIM(Nloc) ; DO i=0,Nloc
@@ -379,6 +379,7 @@ DO j=0,ZDIM(Nloc) ; DO i=0,Nloc
   ! ideal gas law
   muS=VISCOSITY_PRIM(prim)
   lambda=THERMAL_CONDUCTIVITY_H(muS)
+
   ! auxiliary variables
   ! In previous versions gradients of conservative variables had been used, see Git commit b984f2895121e236ce24c149ad15615180995b00
   ! gradients of primitive variables are directly available gradU = (/ drho, dv1, dv2, dv3, dp, dT /)
@@ -391,12 +392,12 @@ DO j=0,ZDIM(Nloc) ; DO i=0,Nloc
   v3=UPrim_Face(SGI4,i,j)
   ! gradients of primitive variables are directly available gradU = (/ drho, dv1, dv2, dv3, dp, dT /)
 
-  tau_xx=muS*( s43*gradUx_Face(SGI2,i,j)-s23*gradUy_Face(SGI3,i,j)-s23*gradUz_Face(SGI4,i,j)) !  4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
-  tau_yy=muS*(-s23*gradUx_Face(SGI2,i,j)+s43*gradUy_Face(SGI3,i,j)-s23*gradUz_Face(SGI4,i,j)) ! -2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
-  tau_zz=muS*(-s23*gradUx_Face(SGI2,i,j)-s23*gradUy_Face(SGI3,i,j)+s43*gradUz_Face(SGI4,i,j)) ! -2/3*mu*u_x-2/3*mu*v_y +4/3*mu*w*z
-  tau_xy=muS*(gradUy_Face(SGI2,i,j)+gradUx_Face(SGI3,i,j))                                    ! mu*(u_y+v_x)
-  tau_xz=muS*(gradUz_Face(SGI2,i,j)+gradUx_Face(SGI4,i,j))                                    ! mu*(u_z+w_x)
-  tau_yz=muS*(gradUz_Face(SGI3,i,j)+gradUy_Face(SGI4,i,j))                                    ! mu*(y_z+w_y)
+  tau_xx=SG_Product(muS, s43*gradUx_Face(SGI2,i,j)-s23*gradUy_Face(SGI3,i,j)-s23*gradUz_Face(SGI4,i,j))   !  4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
+  tau_yy=SG_Product(muS,(-s23*gradUx_Face(SGI2,i,j)+s43*gradUy_Face(SGI3,i,j)-s23*gradUz_Face(SGI4,i,j))) ! -2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
+  tau_zz=SG_Product(muS,(-s23*gradUx_Face(SGI2,i,j)-s23*gradUy_Face(SGI3,i,j)+s43*gradUz_Face(SGI4,i,j))) ! -2/3*mu*u_x-2/3*mu*v_y +4/3*mu*w*z
+  tau_xy=SG_Product(muS,(gradUy_Face(SGI2,i,j)+gradUx_Face(SGI3,i,j)))                                    ! mu*(u_y+v_x)
+  tau_xz=SG_Product(muS,(gradUz_Face(SGI2,i,j)+gradUx_Face(SGI4,i,j)))                                    ! mu*(u_z+w_x)
+  tau_yz=SG_Product(muS,(gradUz_Face(SGI3,i,j)+gradUy_Face(SGI4,i,j)))                                    ! mu*(y_z+w_y)
   gradT3=gradUz_Face(SGI6,i,j)
   gradT1=gradUx_Face(SGI6,i,j)
   gradT2=gradUy_Face(SGI6,i,j)
@@ -405,43 +406,43 @@ DO j=0,ZDIM(Nloc) ; DO i=0,Nloc
   f(SGI2,i,j)=-tau_xx                                         ! F_euler-4/3*mu*u_x+2/3*mu*(v_y+w_z)
   f(SGI3,i,j)=-tau_xy                                         ! F_euler-mu*(u_y+v_x)
   f(SGI4,i,j)=-tau_xz                                         ! F_euler-mu*(u_z+w_x)
-  f(SGI5,i,j)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-SG_Product(tau_xz,v3)-lambda*gradT1  
+  f(SGI5,i,j)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-SG_Product(tau_xz,v3)-SG_Product(lambda,gradT1)
                                                               ! F_euler-(tau_xx*u+tau_xy*v+tau_xz*w-q_x) q_x=-lambda*T_x
   ! viscous fluxes in y-direction
   g(SGI1,i,j)=0.
   g(SGI2,i,j)=-tau_xy                                         ! F_euler-mu*(u_y+v_x)
   g(SGI3,i,j)=-tau_yy                                         ! F_euler-4/3*mu*v_y+2/3*mu*(u_x+w_z)
   g(SGI4,i,j)=-tau_yz                                         ! F_euler-mu*(y_z+w_y)
-  g(SGI5,i,j)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-SG_Product(tau_yz,v3)-lambda*gradT2  
+  g(SGI5,i,j)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-SG_Product(tau_yz,v3)-SG_Product(lambda,gradT2)
                                                               ! F_euler-(tau_yx*u+tau_yy*v+tau_yz*w-q_y) q_y=-lambda*T_y
   ! viscous fluxes in z-direction
   h(SGI1,i,j)=0.
   h(SGI2,i,j)=-tau_xz                                         ! F_euler-mu*(u_z+w_x)
   h(SGI3,i,j)=-tau_yz                                         ! F_euler-mu*(y_z+w_y)
   h(SGI4,i,j)=-tau_zz                                         ! F_euler-4/3*mu*w_z+2/3*mu*(u_x+v_y)
-  h(SGI5,i,j)=-SG_Product(tau_xz,v1)-SG_Product(tau_yz,v2)-SG_Product(tau_zz,v3)-lambda*gradT3  
+  h(SGI5,i,j)=-SG_Product(tau_xz,v1)-SG_Product(tau_yz,v2)-SG_Product(tau_zz,v3)-SG_Product(lambda,gradT3)
                                                               ! F_euler-(tau_zx*u+tau_zy*v+tau_zz*w-q_z) q_z=-lambda*T_z
 #else
   ! gradients of primitive variables are directly available gradU = (/ drho, dv1, dv2, dv3, dp, dT /)
 
-  tau_xx=muS*( s43*gradUx_Face(SGI2,i,j)-s23*gradUy_Face(SGI3,i,j)) ! 4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
-  tau_yy=muS*(-s23*gradUx_Face(SGI2,i,j)+s43*gradUy_Face(SGI3,i,j)) !-2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
-  tau_xy=muS*(gradUy_Face(SGI2,i,j)+gradUx_Face(SGI3,i,j))          !mu*(u_y+v_x)
+  tau_xx=SG_Product(muS,( s43*gradUx_Face(SGI2,i,j)-s23*gradUy_Face(SGI3,i,j))) ! 4/3*mu*u_x-2/3*mu*v_y -2/3*mu*w*z
+  tau_yy=SG_Product(muS,(-s23*gradUx_Face(SGI2,i,j)+s43*gradUy_Face(SGI3,i,j))) !-2/3*mu*u_x+4/3*mu*v_y -2/3*mu*w*z
+  tau_xy=SG_Product(muS,(gradUy_Face(SGI2,i,j)+gradUx_Face(SGI3,i,j)))          !mu*(u_y+v_x)
   gradT1=gradUx_Face(SGI6,i,j)
   gradT2=gradUy_Face(SGI6,i,j)
   ! viscous fluxes in x-direction
   f(SGI1,i,j)=0.
   f(SGI2,i,j)=-tau_xx                                         ! F_euler-4/3*mu*u_x+2/3*mu*(v_y+w_z)
   f(SGI3,i,j)=-tau_xy                                         ! F_euler-mu*(u_y+v_x)
-  f(SGI4,i,j)=0.   
-  f(SGI5,i,j)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-lambda*gradT1  
+  f(SGI4,i,j)=0.
+  f(SGI5,i,j)=-SG_Product(tau_xx,v1)-SG_Product(tau_xy,v2)-SG_Product(lambda,gradT1)
                                                               ! F_euler-(tau_xx*u+tau_xy*v+tau_xz*w-q_x) q_x=-lambda*T_x
   ! viscous fluxes in y-direction
   g(SGI1,i,j)=0.
   g(SGI2,i,j)=-tau_xy                                         ! F_euler-mu*(u_y+v_x)
   g(SGI3,i,j)=-tau_yy                                         ! F_euler-4/3*mu*v_y+2/3*mu*(u_x+w_z)
   g(SGI4,i,j)=0.
-  g(SGI5,i,j)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-lambda*gradT2  
+  g(SGI5,i,j)=-SG_Product(tau_xy,v1)-SG_Product(tau_yy,v2)-SG_Product(lambda,gradT2)
                                                               ! F_euler-(tau_yx*u+tau_yy*v+tau_yz*w-q_y) q_y=-lambda*T_y
   ! viscous fluxes in z-direction
   h(:,i,j)=0.

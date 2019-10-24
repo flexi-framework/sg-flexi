@@ -74,8 +74,9 @@ CALL addStrListEntry(               'StochVarName','startpos_xy'   ,SGV_STARTPOS
 CALL addStrListEntry(               'StochVarName','refstatevel_xy',SGV_REFSTATEVEL_XY)
 CALL addStrListEntry(               'StochVarName','delta_99'      ,SGV_DELTA_99)
 CALL addStrListEntry(               'StochVarName','dmr_angle'     ,SGV_DMR_ANGLE)
-CALL addStrListEntry(               'StochVarName','mach'          ,SGV_MACH)
-
+#if PARABOLIC
+CALL addStrListEntry(               'StochVarName','viscosity'     ,SGV_VISCOSITY)
+#endif
 CALL prms%CreateRealOption(         'StochSigma'            ,"Variance of random input variable"          ,multiple=.TRUE.)
 CALL prms%CreateRealOption(         'StochMu'               ,"Expectation of random input variable"       ,multiple=.TRUE.)
 CALL prms%CreateRealArrayOption(    'UniformIntervalBounds' ,"",multiple=.TRUE.)
@@ -188,11 +189,11 @@ IMPLICIT NONE
 ! LOCAL VARIABLES
 INTEGER                     :: iDimStoch,iStochVarName
 REAL                        :: tmp(2)
-LOGICAL                     :: DimStochIsSet(1:SGV_ARRAY_LEN)
 !===================================================================================================================================
 SWRITE(UNIT_stdOut,'(A)') ' Initialize stochastic variables ...'
 ! Define StochVarNamesAll for output
 ALLOCATE(StochVarNamesAll(SGV_ARRAY_LEN))
+ALLOCATE(DimStochIsSet(SGV_ARRAY_LEN))
 StochVarNamesAll(SGV_AMPLITUDE)      = 'Amplitude'
 StochVarNamesAll(SGV_WAVESPEED)      = 'Wavespeed'
 StochVarNamesAll(SGV_WAVELENGTH)     = 'Wavelength'
@@ -200,8 +201,9 @@ StochVarNamesAll(SGV_STARTPOS_XY)    = 'StartPositionXY'
 StochVarNamesAll(SGV_REFSTATEVEL_XY) = 'RefStateVelocityXY'
 StochVarNamesAll(SGV_DELTA_99)       = 'Delta_99'
 StochVarNamesAll(SGV_DMR_ANGLE)      = 'DMR_Angle'
-StochVarNamesAll(SGV_MACH)           = 'MachNumber'
-
+#if PARABOLIC
+StochVarNamesAll(SGV_VISCOSITY)      = 'Viscosity'
+#endif
 ! Set Standard values for SGV_Variables
 ALLOCATE(xiDet(1:SGV_ARRAY_LEN))
 xiDet = 0.
@@ -225,7 +227,11 @@ DO iDimStoch=1,PP_nDimStoch
   ELSE
     DimStochIsSet(iStochVarName) = .TRUE.
   END IF
+  IF(iStochVarName.EQ.SGV_VISCOSITY) viscosityDim = iDimStoch
 END DO
+IF (.NOT.DimStochIsSet(SGV_VISCOSITY)) THEN
+  CALL Abort(__STAMP__,'ERROR: Using this branch, please ALWAYS set Viscosity as a stochastic variable. var(mu)=0 is okay.') 
+END IF 
 
 
 ! get parameters of variable (mu/sigma or interval bounds)
@@ -283,11 +289,11 @@ IF(nSGElems.GT.1)THEN
   IF(Distribution.NE.SG_DIST_UNIFORM) CALL Abort(__STAMP__,'Multi-element SG only implemented for uniform distribution')
 ENDIF
 
-IF(posti) THEN 
+IF(posti) THEN
   mySGElem_nD=1
   RETURN
   !the rest is done in Build_FV_DG_distribution
-END IF 
+END IF
 
 IF(nProcessors.LT.nSGElems) &
   CALL CollectiveStop(__STAMP__, "Number of processors smaller than number of Meshfiles")
@@ -374,6 +380,9 @@ SDEALLOCATE(StochVarNamesAll)
 SDEALLOCATE(StochVarNames)
 SDEALLOCATE(nSGElems_nD)
 SDEALLOCATE(mySGElem_nD)
+SDEALLOCATE(DimStochIsSet)
+SDEALLOCATE(SG_Vdm_OrthQuad_1D)
+SDEALLOCATE(SG_Vdm_QuadOrth_1D)
 SGInitIsDone = .FALSE.
 END SUBROUTINE FinalizeSG
 

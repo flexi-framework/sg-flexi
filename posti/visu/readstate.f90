@@ -233,6 +233,7 @@ USE MOD_ReadInTools         ,ONLY: prms
 USE MOD_ReadInTools         ,ONLY: FinalizeParameters
 USE MOD_Mesh_Vars           ,ONLY: nElems,offsetElem
 USE MOD_HDF5_Input,          ONLY: OpenDataFile,ReadArray,CloseDataFile
+USE MOD_Equation            ,ONLY: FinalizeEquation
 USE MOD_EOS                 ,ONLY: DefineParametersEos,InitEOS
 USE MOD_Interpolation       ,ONLY: DefineParametersInterpolation,InitInterpolation,FinalizeInterpolation
 #if FV_ENABLED
@@ -268,7 +269,7 @@ IF (meshMode_loc.EQ.2)THEN
 END IF
 #endif
 CALL FinalizeSG()
-
+CALL FinalizeEquation()
 ! check if the mesh mode has changed from the last time
 changedMeshMode = (meshMode_loc.NE.meshMode_old)
 

@@ -118,7 +118,7 @@ USE MOD_FV_Vars            ,ONLY: FV_Elems
 #ifdef EDDYVISCOSITY
 USE MOD_EddyVisc_Vars      ,ONLY: muSGSMax
 #endif
-USE MOD_SG_Vars      ,ONLY: SG_SafetyFactor,SG_VdM_OrthQuad,nQPTotal
+USE MOD_SG_Vars            ,ONLY: SG_SafetyFactor,SG_VdM_OrthQuad,nQPTotal,nQP
 IMPLICIT NONE
 !----------------------------------------------------------------------------------------------------------------------------------
 ! INPUT/OUTPUT VARIABLES
@@ -130,13 +130,17 @@ INTEGER                          :: i,j,k,iElem,iVarDet,iQP
 REAL                             :: TimeStepConv,TimeStepVisc,TimeStep(3)
 REAL                             :: Max_Lambda(3),c,vsJ(3)
 #if PARABOLIC
-REAL                             :: Max_Lambda_v(3),mu,prim(PP_nVarPrimDet)
+REAL                             :: Max_Lambda_v(3),mu(PP_nCoef), muQP(nQPTotal),prim(PP_nVarPrimDet)
 #endif /*PARABOLIC*/
 INTEGER                          :: FVE
 REAL,DIMENSION(PP_nVarDet,1:nQPTotal) :: UQuad
 REAL,DIMENSION(PP_2VarDet)       :: UE
 !==================================================================================================================================
 errType=0
+#if PARABOLIC
+  prim = 0.
+  muQP = MATMUL(SG_VdM_OrthQuad,mu0)
+#endif
 
 TimeStepConv=HUGE(1.)
 TimeStepVisc=HUGE(1.)
@@ -175,14 +179,12 @@ DO iElem=1,nElems
 #endif
 #if PARABOLIC
       ! Viscous Eigenvalues
-      prim = UE(DPRIM)
-      mu=VISCOSITY_PRIM(prim)
 #ifdef EDDYVISCOSITY
       mu = mu+muSGSMax(iElem)
 #endif
-      Max_Lambda_v=MAX(Max_Lambda_v,mu*UE(DSRHO)*MetricsVisc(:,i,j,k,iElem,FVE))
+      Max_Lambda_v=MAX(Max_Lambda_v,muQP(iQP)*UE(DSRHO)*MetricsVisc(:,i,j,k,iElem,FVE))
 #endif /* PARABOLIC*/
-    END DO
+    END DO !iQP
   END DO; END DO; END DO ! i,j,k
 #if SG_HP_LIMITER
 dtElem(iElem)=MIN(CFLScale(FVE)*2./(SUM(Max_Lambda)*SG_SafetyFactor), CFLScale(FVE)*wGP(0)/(SUM(Max_Lambda)))

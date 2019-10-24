@@ -392,9 +392,9 @@ END IF
 withDGOperator = .FALSE.
 #if FV_RECONSTRUCT
 ! If what we want to visualize is a state and has FV elements, the DG operator needs to be called for reconstruction
-!IF (StateFileMode) THEN
-  !IF (hasFV_Elems) withDGOperator = .TRUE.
-!END IF
+IF (StateFileMode) THEN
+  IF (hasFV_Elems) withDGOperator = .TRUE.
+END IF
 #endif
 
 ! build mappings of variables which must be calculated/visualized

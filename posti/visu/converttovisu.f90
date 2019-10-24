@@ -47,10 +47,10 @@ PUBLIC:: ConvertToVisu_GenericData
 !PUBLIC:: ConvertToSurfVisu_FV
 
 #if FV_RECONSTRUCT
-!INTERFACE ConvertToVisu_FV_Reconstruct
-  !MODULE PROCEDURE ConvertToVisu_FV_Reconstruct
-!END INTERFACE
-!PUBLIC:: ConvertToVisu_FV_Reconstruct
+INTERFACE ConvertToVisu_FV_Reconstruct
+  MODULE PROCEDURE ConvertToVisu_FV_Reconstruct
+END INTERFACE
+PUBLIC:: ConvertToVisu_FV_Reconstruct
 #endif /* FV_RECONSTRUCT */
 #endif /* FV_ENABLED */
 
@@ -142,140 +142,139 @@ CONTAINS
 !===================================================================================================================================
 !>
 !===================================================================================================================================
-!SUBROUTINE ConvertToVisu_FV_Reconstruct(&
-!#if PARABOLIC
-    !gradUx_calc,gradUy_calc,gradUz_calc, &
-!#endif
-    !UPrim_Quad,gradUxi_Quad,gradUeta_Quad )
-!USE MOD_Globals
-!USE MOD_PreProc
-!USE MOD_Visu_Vars
-!USE MOD_Mesh_Vars          ,ONLY: nElems
-!USE MOD_ReadInTools        ,ONLY: GETINT
-!USE MOD_Interpolation      ,ONLY: GetVandermonde
-!USE MOD_Interpolation_Vars ,ONLY: NodeType,NodeTypeVisu
-!USE MOD_FV_Vars            ,ONLY: FV_dx_XI_L,FV_dx_ETA_L
-!USE MOD_FV_Vars            ,ONLY: FV_dx_XI_R,FV_dx_ETA_R
-!USE MOD_FV_Vars            ,ONLY: gradUxi,gradUeta
-!#if PP_dim == 3
-!USE MOD_FV_Vars            ,ONLY: gradUzeta
-!USE MOD_FV_Vars            ,ONLY: FV_dx_ZETA_L
-!USE MOD_FV_Vars            ,ONLY: FV_dx_ZETA_R
-!#endif
-!USE MOD_EOS_Posti          ,ONLY: GetMaskPrim
-!#if PARABOLIC
-!USE MOD_Lifting_Vars       ,ONLY: gradUx, gradUy, gradUz
-!#endif
-!IMPLICIT NONE
-!! INPUT / OUTPUT VARIABLES
-!!-----------------------------------------------------------------------------------------------------------------------------------
-!#if PARABOLIC
-!REAL,INTENT(OUT),OPTIONAL    :: gradUx_calc  (1:PP_nVarPrim,0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV)
-!REAL,INTENT(OUT),OPTIONAL    :: gradUy_calc  (1:PP_nVarPrim,0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV)
-!REAL,INTENT(OUT),OPTIONAL    :: gradUz_calc  (1:PP_nVarPrim,0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV)
-!#endif
-!REAL,INTENT(IN),OPTIONAL     :: UPrim_Quad   (PP_nVarPrimDet,0:PP_N,0:PP_N,0:PP_NZ,nElems)
-!REAL,INTENT(IN),OPTIONAL     :: gradUxi_Quad (PP_nVarPrimDet,0:PP_N,0:PP_NZ,0:PP_N,nElems)
-!REAL,INTENT(IN),OPTIONAL     :: gradUeta_Quad(PP_nVarPrimDet,0:PP_N,0:PP_NZ,0:PP_N,nElems)
-!! LOCAL VARIABLES
-!INTEGER             :: iVar,i,j,k,iElem,iElem_FV
-!INTEGER             :: iVarCalc
-!INTEGER             :: nVarPrim,iVarPrim
-!INTEGER             :: mapUPrim(PP_nVarPrim)
-!INTEGER             :: mapUCalc(PP_nVarPrim)
-!INTEGER             :: maskPrim(nVarDep)
-!!===================================================================================================================================
-!! Build local maps of maximal size PP_nVarPrim:
-!! - mapUCalc(1:nVarPrim) = indices of the nVarPrim primitive quantities that should be visualized in the UCalc_FV array
-!! - mapUPrim(1:nVarPrim) = indices of the nVarPrim primitive quantities in the UPrim array
-!! Example:
-!!   If only velocityX and pressure should be visualized then:
-!!     nVarPrim = 2
-!!     mapUPrim(1) = 2     mapUCalc(1) = index of velocityX in UCalc_FV
-!!     mapUPrim(2) = 5     mapUCalc(2) = index of pressure  in UCalc_FV
-!nVarPrim = 0
-!iVarPrim = 0
-!maskPrim = GetMaskPrim()
-!DO iVar=1,nVarDep
-  !IF (maskPrim(iVar).GT.0) THEN
-    !iVarPrim = iVarPrim + 1
-    !IF (mapDepToCalc_FV(iVar).GT.0) THEN
-      !nVarPrim = nVarPrim + 1
-      !mapUPrim(nVarPrim) = iVarPrim
-      !mapUCalc(nVarPrim) = mapDepToCalc_FV(iVar)
-    !END IF
-  !END IF
-!END DO
-!! SWRITE(*,*) "  nVarPrim", nVarPrim
-!! SWRITE(*,*) "  mapUPrim", mapUPrim(1:nVarPrim)
-!! SWRITE(*,*) "  mapUCalc", mapUCalc(1:nVarPrim)
+SUBROUTINE ConvertToVisu_FV_Reconstruct(&
+#if PARABOLIC
+    gradUx_calc,gradUy_calc,gradUz_calc, &
+#endif
+    UPrim_Quad,gradUxi_Quad,gradUeta_Quad )
+USE MOD_Globals
+USE MOD_PreProc
+USE MOD_Visu_Vars
+USE MOD_Mesh_Vars          ,ONLY: nElems
+USE MOD_ReadInTools        ,ONLY: GETINT
+USE MOD_Interpolation      ,ONLY: GetVandermonde
+USE MOD_Interpolation_Vars ,ONLY: NodeType,NodeTypeVisu
+USE MOD_FV_Vars            ,ONLY: FV_dx_XI_L,FV_dx_ETA_L
+USE MOD_FV_Vars            ,ONLY: FV_dx_XI_R,FV_dx_ETA_R
+#if PP_dim == 3
+USE MOD_FV_Vars            ,ONLY: gradUzeta
+USE MOD_FV_Vars            ,ONLY: FV_dx_ZETA_L
+USE MOD_FV_Vars            ,ONLY: FV_dx_ZETA_R
+#endif
+USE MOD_EOS_Posti          ,ONLY: GetMaskPrim
+#if PARABOLIC
+USE MOD_Lifting_Vars       ,ONLY: gradUx, gradUy, gradUz
+#endif
+IMPLICIT NONE
+! INPUT / OUTPUT VARIABLES
+!-----------------------------------------------------------------------------------------------------------------------------------
+#if PARABOLIC
+REAL,INTENT(OUT),OPTIONAL    :: gradUx_calc  (1:PP_nVarPrim,0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV)
+REAL,INTENT(OUT),OPTIONAL    :: gradUy_calc  (1:PP_nVarPrim,0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV)
+REAL,INTENT(OUT),OPTIONAL    :: gradUz_calc  (1:PP_nVarPrim,0:NVisu_FV,0:NVisu_FV,0:ZDIM(NVisu_FV),nElems_FV)
+#endif
+REAL,INTENT(IN),OPTIONAL     :: UPrim_Quad   (PP_nVarPrimDet,0:PP_N,0:PP_N,0:PP_NZ,nElems)
+REAL,INTENT(IN),OPTIONAL     :: gradUxi_Quad (PP_nVarPrimDet,0:PP_N,0:PP_NZ,0:PP_N,nElems)
+REAL,INTENT(IN),OPTIONAL     :: gradUeta_Quad(PP_nVarPrimDet,0:PP_N,0:PP_NZ,0:PP_N,nElems)
+! LOCAL VARIABLES
+INTEGER             :: iVar,i,j,k,iElem,iElem_FV
+INTEGER             :: iVarCalc
+INTEGER             :: nVarPrim,iVarPrim
+INTEGER             :: mapUPrim(PP_nVarPrim)
+INTEGER             :: mapUCalc(PP_nVarPrim)
+INTEGER             :: maskPrim(nVarDep)
+!===================================================================================================================================
+! Build local maps of maximal size PP_nVarPrim:
+! - mapUCalc(1:nVarPrim) = indices of the nVarPrim primitive quantities that should be visualized in the UCalc_FV array
+! - mapUPrim(1:nVarPrim) = indices of the nVarPrim primitive quantities in the UPrim array
+! Example:
+!   If only velocityX and pressure should be visualized then:
+!     nVarPrim = 2
+!     mapUPrim(1) = 2     mapUCalc(1) = index of velocityX in UCalc_FV
+!     mapUPrim(2) = 5     mapUCalc(2) = index of pressure  in UCalc_FV
+nVarPrim = 0
+iVarPrim = 0
+maskPrim = GetMaskPrim()
+DO iVar=1,nVarDep
+  IF (maskPrim(iVar).GT.0) THEN
+    iVarPrim = iVarPrim + 1
+    IF (mapDepToCalc_FV(iVar).GT.0) THEN
+      nVarPrim = nVarPrim + 1
+      mapUPrim(nVarPrim) = iVarPrim
+      mapUCalc(nVarPrim) = mapDepToCalc_FV(iVar)
+    END IF
+  END IF
+END DO
+! SWRITE(*,*) "  nVarPrim", nVarPrim
+! SWRITE(*,*) "  mapUPrim", mapUPrim(1:nVarPrim)
+! SWRITE(*,*) "  mapUCalc", mapUCalc(1:nVarPrim)
 
 
-!DO iElem_FV=1,nElems_FV
-  !iElem = mapFVElemsToAllElems(iElem_FV)
-  !DO k=0,PP_NZ; DO j=0,PP_N; DO i=0,PP_N
-    !DO iVar=1,nVarPrim
-      !iVarPrim = mapUPrim(iVar)
-      !iVarCalc = mapUCalc(iVar)
-      !UCalc_FV(i*2  ,j*2  ,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
-          !- gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
-          !- gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem)
-      !UCalc_FV(i*2+1,j*2  ,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
-          !+ gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
-          !- gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem)
-      !UCalc_FV(i*2  ,j*2+1,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem)  &
-          !- gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
-          !+ gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem)
-      !UCalc_FV(i*2+1,j*2+1,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
-          !+ gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
-          !+ gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem)
-!#if PP_dim == 3
-      !UCalc_FV(i*2  ,j*2  ,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2  ,j*2  ,k*2  ,iElem_FV,iVarCalc)  &
-          !- gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
-      !UCalc_FV(i*2+1,j*2  ,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2+1,j*2  ,k*2  ,iElem_FV,iVarCalc)  &
-          !- gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
-      !UCalc_FV(i*2  ,j*2+1,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2  ,j*2+1,k*2  ,iElem_FV,iVarCalc)  &
-          !- gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
-      !UCalc_FV(i*2+1,j*2+1,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2+1,j*2+1,k*2  ,iElem_FV,iVarCalc)  &
-          !- gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
+DO iElem_FV=1,nElems_FV
+  iElem = mapFVElemsToAllElems(iElem_FV)
+  DO k=0,PP_NZ; DO j=0,PP_N; DO i=0,PP_N
+    DO iVar=1,nVarPrim
+      iVarPrim = mapUPrim(iVar)
+      iVarCalc = mapUCalc(iVar)
+      UCalc_FV(i*2  ,j*2  ,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
+          - gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
+          - gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem)
+      UCalc_FV(i*2+1,j*2  ,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
+          + gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
+          - gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem)
+      UCalc_FV(i*2  ,j*2+1,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem)  &
+          - gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
+          + gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem)
+      UCalc_FV(i*2+1,j*2+1,k*2  ,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
+          + gradUxi_Quad  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
+          + gradUeta_Quad (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem)
+#if PP_dim == 3
+      UCalc_FV(i*2  ,j*2  ,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2  ,j*2  ,k*2  ,iElem_FV,iVarCalc)  &
+          - gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
+      UCalc_FV(i*2+1,j*2  ,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2+1,j*2  ,k*2  ,iElem_FV,iVarCalc)  &
+          - gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
+      UCalc_FV(i*2  ,j*2+1,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2  ,j*2+1,k*2  ,iElem_FV,iVarCalc)  &
+          - gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
+      UCalc_FV(i*2+1,j*2+1,k*2  ,iElem_FV,iVarCalc) = UCalc_FV(i*2+1,j*2+1,k*2  ,iElem_FV,iVarCalc)  &
+          - gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_L(i,j,k,iElem)
 
-      !UCalc_FV(i*2  ,j*2  ,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem)  &
-          !- gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
-          !- gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem) &
-          !+ gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
-      !UCalc_FV(i*2+1,j*2  ,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
-          !+ gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
-          !- gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem) &
-          !+ gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
-      !UCalc_FV(i*2  ,j*2+1,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
-          !- gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
-          !+ gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem) &
-          !+ gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
-      !UCalc_FV(i*2+1,j*2+1,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem)  &
-          !+ gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
-          !+ gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem) &
-          !+ gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
-!#endif
-    !END DO
-  !END DO; END DO; END DO
-!END DO ! iElem_FV
+      UCalc_FV(i*2  ,j*2  ,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem)  &
+          - gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
+          - gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem) &
+          + gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
+      UCalc_FV(i*2+1,j*2  ,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
+          + gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
+          - gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_L(i,k,j,iElem) &
+          + gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
+      UCalc_FV(i*2  ,j*2+1,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem) &
+          - gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_L(j,k,i,iElem) &
+          + gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem) &
+          + gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
+      UCalc_FV(i*2+1,j*2+1,k*2+1,iElem_FV,iVarCalc) = UPrim_Quad(iVarPrim,i,j,k,iElem)  &
+          + gradUxi  (iVarPrim,j,k,i,iElem) *   FV_dx_XI_R(j,k,i,iElem) &
+          + gradUeta (iVarPrim,i,k,j,iElem) *  FV_dx_ETA_R(i,k,j,iElem) &
+          + gradUzeta(iVarPrim,i,j,k,iElem) * FV_dx_ZETA_R(i,j,k,iElem)
+#endif
+    END DO
+  END DO; END DO; END DO
+END DO ! iElem_FV
 
 
-!#if PARABOLIC
-!IF (PRESENT(gradUx_calc).AND.PRESENT(gradUy_calc).AND.PRESENT(gradUz_calc)) THEN
-  !DO iElem_FV=1,nElems_FV
-    !iElem = mapFVElemsToAllElems(iElem_FV)
-    !DO k=0,PP_NZ; DO j=0,PP_N; DO i=0,PP_N
-      !DO iVar=1,PP_nVarPrim
-         !gradUx_calc(iVar,i*2:i*2+1, j*2:j*2+1, k*2:k*2+1*(PP_dim-2), iElem_FV) = gradUx(iVar,i,j,k,iElem)
-         !gradUy_calc(iVar,i*2:i*2+1, j*2:j*2+1, k*2:k*2+1*(PP_dim-2), iElem_FV) = gradUy(iVar,i,j,k,iElem)
-         !gradUz_calc(iVar,i*2:i*2+1, j*2:j*2+1, k*2:k*2+1*(PP_dim-2), iElem_FV) = gradUz(iVar,i,j,k,iElem)
-      !END DO
-    !END DO; END DO; END DO! i,j,k=0,PP_N
-  !END DO
-!END IF
-!#endif
-!END SUBROUTINE ConvertToVisu_FV_Reconstruct
+#if PARABOLIC
+IF (PRESENT(gradUx_calc).AND.PRESENT(gradUy_calc).AND.PRESENT(gradUz_calc)) THEN
+  DO iElem_FV=1,nElems_FV
+    iElem = mapFVElemsToAllElems(iElem_FV)
+    DO k=0,PP_NZ; DO j=0,PP_N; DO i=0,PP_N
+      DO iVar=1,PP_nVarPrim
+         gradUx_calc(iVar,i*2:i*2+1, j*2:j*2+1, k*2:k*2+1*(PP_dim-2), iElem_FV) = gradUx(iVar,i,j,k,iElem)
+         gradUy_calc(iVar,i*2:i*2+1, j*2:j*2+1, k*2:k*2+1*(PP_dim-2), iElem_FV) = gradUy(iVar,i,j,k,iElem)
+         gradUz_calc(iVar,i*2:i*2+1, j*2:j*2+1, k*2:k*2+1*(PP_dim-2), iElem_FV) = gradUz(iVar,i,j,k,iElem)
+      END DO
+    END DO; END DO; END DO! i,j,k=0,PP_N
+  END DO
+END IF
+#endif
+END SUBROUTINE ConvertToVisu_FV_Reconstruct
 
 #endif /* FV_RECONSTRUCT */
 

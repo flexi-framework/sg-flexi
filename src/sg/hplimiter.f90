@@ -11,6 +11,7 @@
 !
 ! You should have received a copy of the GNU General Public License along with FLEXI. If not, see <http://www.gnu.org/licenses/>.
 !=================================================================================================================================
+#if SG_HP_LIMITER
 #include "flexi.h"
 #include "eos.h"
 !==================================================================================================================================
@@ -77,7 +78,7 @@ USE MOD_PreProc
 USE MOD_DG_Vars             ,ONLY: U
 USE MOD_Mesh_Vars           ,ONLY: nElems
 USE MOD_SG_Vars             ,ONLY: nQPTotal,SG_VdM_OrthQuad,t_HPLimiter
-USE MOD_Analyze_Vars        ,ONLY: wGPVol!,ElemVol
+USE MOD_Interpolation_Vars  ,ONLY: wGP
 #if FV_ENABLED
 USE MOD_FV_Vars             ,ONLY: FV_Elems
 #if FV_RECONSTRUCT
@@ -120,9 +121,9 @@ DO iElem=1,nElems
 #endif
   UMean = 0.
   DO k=0,PP_NZ;DO j=0,PP_N;DO i=0,PP_N
-    UMean = UMean + U(SMODE(0),i,j,k,iElem)*wGPVol(i,j,k)
+    UMean = UMean + U(SMODE(0),i,j,k,iElem)*wGP(i)*wGP(j)*MERGE(wGP(k),2.,PP_dim.EQ.3)
   END DO; END DO; END DO
-  UMean = UMean / 2.**PP_dim
+  UMean = UMean / 8.
   t=0.
   DO k=0,PP_NZ;DO j=0,PP_N;DO i=0,PP_N
     DO iQP=1,nQPTotal
@@ -190,9 +191,7 @@ DO iElem=1,nElems
 #if FV_RECONSTRUCT
       gradUxi  (:,i,k,j,iElem) = (1.-t) *   gradUxi(:,i,k,j,iElem)
       gradUeta (:,i,k,j,iElem) = (1.-t) *  gradUeta(:,i,k,j,iElem)
-#if PP_dim == 3
       gradUzeta(:,i,k,j,iElem) = (1.-t) * gradUzeta(:,i,k,j,iElem)
-#endif
 #endif /*FV_RECONSTRUCT*/
     END IF
     t_HPLimiter(1,i,j,k,iElem)=t
@@ -257,7 +256,7 @@ SUBROUTINE checkAdmissible()
 ! MODULES
 USE MOD_PreProc
 USE MOD_Globals
-USE MOD_Analyze_Vars        ,ONLY: wGPVol!,ElemVol
+USE MOD_Interpolation_Vars  ,ONLY: wGP
 USE MOD_Mesh_Vars           ,ONLY: nElems
 USE MOD_DG_Vars             ,ONLY: U
 #if FV_ENABLED
@@ -276,11 +275,11 @@ DO iElem=1,nElems
 #if FV_ENABLED
   IF (FV_Elems(iElem).EQ.1) CYCLE
 #endif
-  UMean = 0.
   DO k=0,PP_NZ;DO j=0,PP_N;DO i=0,PP_N
-    UMean = UMean + U(SMODE(0),i,j,k,iElem)*wGPVol(i,j,k)
+    UMean = 0.
+    UMean = UMean + U(SMODE(0),i,j,k,iElem)*wGP(i)*wGP(j)*MERGE(wGP(k),2.,PP_dim.EQ.3)
   END DO; END DO; END DO
-  UMean = UMean / 2.**PP_dim
+  UMean = UMean / 8.
   pressure= UMean(DENER)-0.5*DOT_PRODUCT(UMean(DMMV2),UMean(DMMV2))/UMean(DDENS)
   IF( (pressure.LT.0.).OR.(UMean(DDENS).LT.0.)) THEN
     ERRWRITE(*,'(A)') 'Cellmean not admissible'
@@ -317,3 +316,4 @@ SDEALLOCATE(nLimitedElems)
 END SUBROUTINE FinalizeHPLimiter
 
 END MODULE MOD_HPLimiter
+#endif
