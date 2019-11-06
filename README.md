@@ -41,6 +41,9 @@ Several people have worked on and with SG-FLEXI over the last years.
 We would like to thank all these [CONTRIBUTORS.md](contributors)
 for their efforts they spent on building SG-FLEXI.
 
+## Funding
+This code was developed in the course of the project “SEAL” funded by the Baden-Württemberg Stiftung. 
+
 # Installation
 
 For installation instruction see [INSTALL.md](INSTALL.md).
